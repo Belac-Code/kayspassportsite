@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PrintKay’s Tech | Passport Batcher</title>
+    <style>
+        :root { --gold: #d4af37; --dark: #1a1a1a; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; text-align: center; padding: 20px; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .upload-area { border: 2px dashed var(--gold); padding: 40px; border-radius: 10px; cursor: pointer; margin-bottom: 20px; }
+        .controls { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; flex-wrap: wrap; }
+        button { padding: 12px 24px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-edit { background: var(--dark); color: white; }
+        .btn-download { background: var(--gold); color: white; }
+        canvas { max-width: 100%; height: auto; border: 1px solid #ccc; margin-top: 20px; display: none; }
+        .preview-label { font-weight: bold; color: var(--dark); margin-top: 10px; display: block; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>PrintKay’s Professional Passport Batcher</h2>
+    <p>Upload a photo to retouch and duplicate for printing.</p>
+
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <p id="uploadText">Click or Drag Image Here</p>
+        <input type="file" id="fileInput" hidden accept="image/*">
+    </div>
+
+    <div class="controls">
+        <button class="btn-edit" onclick="processImage('white')">White Background</button>
+        <button class="btn-edit" onclick="processImage('skyblue')">Blue Background</button>
+        <button class="btn-edit" onclick="processImage('red')">Red Background</button>
+    </div>
+
+    <div class="controls">
+        <label>Duplicates: </label>
+        <select id="dupCount">
+            <option value="4">4 Photos (2x2)</option>
+            <option value="8" selected>8 Photos (2x4)</option>
+        </select>
+        <button class="btn-download" onclick="downloadImage()">Download JPG</button>
+    </div>
+
+    <span class="preview-label">Print Preview (High Contrast / Cleaned)</span>
+    <canvas id="passportCanvas"></canvas>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const canvas = document.getElementById('passportCanvas');
+    const ctx = canvas.getContext('2d');
+    let originalImg = new Image();
+
+    fileInput.onchange = (e) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            originalImg.onload = () => {
+                document.getElementById('uploadText').innerText = "Image Loaded: " + e.target.files[0].name;
+                processImage('white'); // Default
+            };
+            originalImg.src = event.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    };
+
+    function processImage(bgColor) {
+        const num = parseInt(document.getElementById('dupCount').value);
+        canvas.style.display = "block";
+        
+        // Standard High-Res 4x6 inch Canvas at 300DPI
+        canvas.width = 1200;
+        canvas.height = 1800;
+
+        const cols = 2;
+        const rows = num / cols;
+        const padding = 40;
+        
+        const cellW = (canvas.width / cols) - (padding * 1.5);
+        const cellH = (canvas.height / rows) - (padding * 1.5);
+
+        // Background Fill
+        ctx.fillStyle = "#ffffff"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Apply "Clean Professional" Filters
+        // brightness(1.05) clears the face, contrast(1.2) makes it pop
+        ctx.filter = "brightness(1.08) contrast(1.15) saturate(1.1)";
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                let x = c * (canvas.width / cols) + padding;
+                let y = r * (canvas.height / rows) + padding;
+                
+                // Draw a background color rectangle behind each headshot
+                ctx.fillStyle = bgColor;
+                ctx.fillRect(x, y, cellW, cellH);
+
+                // Draw the actual image
+                ctx.drawImage(originalImg, x, y, cellW, cellH);
+            }
+        }
+    }
+
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = 'passport_batch_printkay.jpg';
+        link.href = canvas.toDataURL('image/jpeg', 0.95);
+        link.click();
+    }
+</script>
+
+</body>
+</html>
